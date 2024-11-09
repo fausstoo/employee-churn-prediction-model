@@ -1,0 +1,19 @@
+numpy
+pandas
+scipy
+scikit-learn
+matplotlib
+seaborn
+tensorflow      # or pytorch
+sqlalchemy
+faker
+dvc
+requests
+beautifulsoup4
+jupyter
+jupyterlab
+ipython
+pytest
+sphinx
+black
+-e .
