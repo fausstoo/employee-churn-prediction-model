@@ -1,0 +1,30 @@
+Metadata-Version: 2.1
+Name: Project-Name
+Version: 0.0.1
+Summary: Short project description here
+Home-page: https://github.com/FaustoPF/project-name
+Author: FaustoPF
+Author-email: faustopuchetafortin@gmail.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: scipy
+Requires-Dist: scikit-learn
+Requires-Dist: matplotlib
+Requires-Dist: seaborn
+Requires-Dist: tensorflow
+Requires-Dist: sqlalchemy
+Requires-Dist: faker
+Requires-Dist: dvc
+Requires-Dist: requests
+Requires-Dist: beautifulsoup4
+Requires-Dist: jupyter
+Requires-Dist: jupyterlab
+Requires-Dist: ipython
+Requires-Dist: pytest
+Requires-Dist: sphinx
+Requires-Dist: black
