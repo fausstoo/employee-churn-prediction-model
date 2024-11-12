@@ -8,7 +8,7 @@ import seaborn as sns
 #                 Plot Settings                    |
 #---------------------------------------------------
 plt.style.use("seaborn-v0_8-deep")
-plt.rcParams["figure.figsize"] = [10, 8]
+plt.rcParams["figure.figsize"] = [8, 6]
 plt.rcParams["figure.dpi"] = 300
 
 
@@ -43,7 +43,7 @@ def grouped_boxplots(data_frame):
         min_value = data_frame[feature].min()
         max_value = data_frame[feature].max()
 
-        # Add mean, median, min and max labels 
+        # Add mean, median, min, and max labels 
         x_coord = 1.2  
         y_coord_mean = mean_value + 0.3
         y_coord_median = median_value + 0.3
@@ -54,24 +54,24 @@ def grouped_boxplots(data_frame):
         ax.text(x_coord, y_coord_min, f'Min: {min_value:.2f}', va='bottom', ha='left', fontweight='bold')
         ax.text(x_coord, y_coord_max, f'Max: {max_value:.2f}', va='top', ha='left', fontweight='bold')
 
+    # Remove extra axes if there are any empty subplots
     for i in range(len(selected_features), num_rows * num_cols):
         fig.delaxes(axes[i // num_cols][i % num_cols])
 
     # Padding
     fig.tight_layout(pad=3.0)
     
-    return plt
-    
-def save_grouped_boxplot(plot, save_path=None):
+    return fig  # Return the figure object for saving
+
+def save_grouped_boxplot(fig, save_path=None):
     # Save the combined plot
     if save_path:
         os.makedirs(save_path, exist_ok=True)  # Create the directory if it doesn't exist
         combined_plot_save_path = os.path.join(save_path, "grouped_boxplots.png")
-        plot.savefig(combined_plot_save_path, bbox_inches='tight', dpi=300)
+        fig.savefig(combined_plot_save_path, bbox_inches='tight', dpi=300)
+        plt.close(fig)  # Close the figure after saving to prevent display issues
     
-    print(f"Saved at {save_path}")
-    
-    
+    print(f"Saved at {combined_plot_save_path}")
     
     
 #---------------------------------------------------
@@ -111,15 +111,16 @@ def grouped_histograms(dataframe):
     # Using padding
     fig.tight_layout(pad=3.0)
     
-    return plt
+    return fig
 
 
-def save_grouped_histograms(plot, save_path=None):
+def save_grouped_histograms(fig, save_path=None):
     # Save the combined histogram plot
     if save_path:
         os.makedirs(save_path, exist_ok=True)  # Create the directory if it doesn't exist
         combined_hist_plot_save_path = os.path.join(save_path, "grouped_histograms.png")
-        plot.savefig(combined_hist_plot_save_path, bbox_inches='tight', dpi=300)
+        fig.savefig(combined_hist_plot_save_path, bbox_inches='tight', dpi=300)
+        plt.close(fig)  # Close the figure after saving to prevent display issues
         
     print(f"Saved at {save_path}")
 
@@ -156,7 +157,7 @@ def stacked_plot(df, feature, save_path=None):
             ax = pivot_table.plot(x=feature, kind='bar', stacked=True, figsize=(6,4))
            
             # Customize the x-axis label and make it larger
-            plt.xlabel(feature, fontsize=20)
+            plt.xlabel(feature, fontsize=12)
 
             # Hide the x-axis ticks to make the chart cleaner
             plt.xticks(visible=False)
@@ -171,8 +172,11 @@ def stacked_plot(df, feature, save_path=None):
             
              # Save the chart if save_path is provided
             if save_path:
-                individual_stacked_save_path = os.path.join(save_path, f"03-stacked_plot_{feature}.png")
-                plt.savefig(individual_stacked_save_path, bbox_inches='tight', dpi=300)
+                os.makedirs(save_path, exist_ok=True)  # Create the directory if it doesn't exist
+                combined_hist_plot_save_path = os.path.join(save_path, "stacked_barplot.png")
+                plt.savefig(combined_hist_plot_save_path, bbox_inches='tight', dpi=300)
+                plt.close(fig)
+                print(f"Saved at {save_path}") 
             # Show the chart
             else:
                 plt.show()
@@ -186,22 +190,61 @@ def stacked_plot(df, feature, save_path=None):
 #---------------------------------------------------------
 #     Get Stacked Bar Plots Categorical Features         |
 #---------------------------------------------------------    
-def get_stacked_bar_plots(df, save_path=None):
+def grouped_stacked_bars(dataframe, save_path=None):
+    # Select columns with categorical features (low cardinality)
+    categorical_cols = [col for col in dataframe.columns if dataframe[col].nunique() < 10]
+    
+    # Determine the number of rows and columns for the subplots grid
+    n_rows = len(categorical_cols) // 2 + len(categorical_cols) % 2
+    n_cols = min(2, len(categorical_cols))
 
-    # Filter columns with cardinality > 9 (These are generally categorical features)
-    selected_cols = [col for col in df.columns if df[col].nunique() < 10]
+    # Create subplots grid
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(12, 4 * n_rows))
+    fig.tight_layout(pad=3.0)
+
+    # Iterate over each categorical column to plot its stacked bar chart
+    for i, col in enumerate(categorical_cols):
+        # Set the correct axis for the subplot
+        row_index = i // n_cols
+        col_index = i % n_cols
+        ax = axes[row_index, col_index] if n_rows > 1 else axes[col_index]
+
+        # Prepare the data for stacked bar plotting
+        value_counts = dataframe[col].value_counts(normalize=True).sort_index()  # Normalize to get percentages
+
+        # Generate a color gradient based on the values
+        colors = [plt.cm.YlOrRd(value) for value in value_counts]  
+
+        # Plot with gradient colors
+        value_counts.plot(kind='bar', stacked=True, ax=ax, color=colors, edgecolor='black')
         
-        # Declared path where the png will be saved
-    path = save_path
+        # Customize the plot appearance
+        ax.set_title(col)
+        ax.set_xlabel('')
+        ax.set_ylabel('Proportion')
         
-        # Initialize an empty list to store the plots
-    plots = []
-        
-        # Loop for each categorical feature within the given data frame
-    for col in selected_cols:
-        plots.append(stacked_plot(df, col, path))
-           
-    return plots
+        # Display percentage annotations on each bar
+        for p in ax.patches:
+            height = p.get_height()
+            ax.annotate(f'{height * 100:.1f}%', (p.get_x() + p.get_width() / 2, height), 
+                        ha='center', va='bottom')
+
+    # Remove any empty subplots if there are fewer features than subplots
+    if len(categorical_cols) < n_rows * n_cols:
+        for j in range(len(categorical_cols), n_rows * n_cols):
+            fig.delaxes(axes.flatten()[j])
+
+    # Save the entire figure if a path is provided
+    if save_path:
+            os.makedirs(save_path, exist_ok=True)  # Create the directory if it doesn't exist
+            combined_hist_plot_save_path = os.path.join(save_path, "grouped_stacked_barplot.png")
+            plt.savefig(combined_hist_plot_save_path, bbox_inches='tight', dpi=300)
+            plt.close(fig)
+            print(f"Saved at {save_path}") 
+    else:
+        plt.show()
+    
+    plt.close(fig)  # Close the figure to free memory and prevent display issues
         
     
 
@@ -219,28 +262,30 @@ def total_nulls_barplot(df):
     non_null_percentages = (non_null_counts / total_counts) * 100
 
     # Create a bar plot to visualize null and non-null percentages
-    plt.figure(figsize=(10, 6))  # Adjust the figure size as needed
-    plt.bar(non_null_counts.index, non_null_percentages, bottom=null_percentages, color='blue', alpha=0.7, label='Non-null')
-    plt.bar(null_counts.index, null_percentages, color='red', alpha=0.7, label='Null')
-    plt.title('Null vs Non-null Value Percentages by Column')
-    plt.xlabel('Columns')
-    plt.ylabel('Percentage')
-    plt.xticks(rotation=90)  # Rotate x-axis labels for better readability
-    plt.legend()
+    fig, ax = plt.subplots(figsize=(6, 4))  # Use subplots to manage fig and ax objects
+    ax.bar(non_null_counts.index, non_null_percentages, bottom=null_percentages, color='blue', alpha=0.7, label='Non-null')
+    ax.bar(null_counts.index, null_percentages, color='red', alpha=0.7, label='Null')
+    ax.set_title('Null vs Non-null Value Percentages by Column')
+    ax.set_xlabel('Columns')
+    ax.set_ylabel('Percentage')
+    ax.set_xticklabels(non_null_counts.index, rotation=90)
+    ax.legend()
 
     # Display the percentages as labels on top of the bars
     for i, (null_percentage, non_null_percentage) in enumerate(zip(null_percentages, non_null_percentages)):
-        plt.text(i, null_percentage + non_null_percentage / 2, f'{null_percentage:.1f}%', ha='center', va='top')
+        ax.text(i, null_percentage + non_null_percentage / 2, f'{null_percentage:.1f}%', ha='center', va='top')
 
-    return plt
-    
-def save_total_nulls_barplot(plot, save_path=None):    
+    return fig  # Return the figure object for saving
+
+def save_total_nulls_barplot(fig, save_path=None):    
     # Save the bar plot
     if save_path:
         os.makedirs(save_path, exist_ok=True)  # Create the directory if it doesn't exist
-        combined_plot_save_path = os.path.join(save_path, "04-total_nulls_barplot.png")
-        plot.savefig(combined_plot_save_path, bbox_inches='tight', dpi=300)
-    print(f"Saved at {save_path}")    
+        combined_plot_save_path = os.path.join(save_path, "total_nulls_barplot.png")
+        fig.savefig(combined_plot_save_path, bbox_inches='tight', dpi=300)
+        plt.close(fig)  # Close the figure after saving to prevent display issues
+    
+    print(f"Saved at {combined_plot_save_path}")  
             
         
         
