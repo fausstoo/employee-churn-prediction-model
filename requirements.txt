@@ -16,4 +16,7 @@ ipython
 pytest
 sphinx
 black
--e .
+statsmodels
+pingouin
+plotly
+ -e .
