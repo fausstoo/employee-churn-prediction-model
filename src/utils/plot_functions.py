@@ -8,8 +8,24 @@ import seaborn as sns
 #                 Plot Settings                    |
 #---------------------------------------------------
 plt.style.use("seaborn-v0_8-deep")
-plt.rcParams["figure.figsize"] = [8, 6]
+plt.rcParams["figure.figsize"] = [6, 4]
 plt.rcParams["figure.dpi"] = 300
+
+
+
+#---------------------------------------------------
+#                 Save Any Figure                  |
+#---------------------------------------------------
+def save_fig(figure, save_path, fig_name, format='png'):
+    try:
+        os.makedirs(save_path, exist_ok=True)
+        plot_save_path = os.path.join(save_path, f"{fig_name}.{format}")
+        figure.savefig(plot_save_path, bbox_inches='tight', dpi=300)
+        plt.show()
+        plt.close(figure)
+        print(f"Saved at {plot_save_path}")
+    except (FileNotFoundError, OSError) as e:
+        print(f"Error saving figure: {e}")
 
 
 #---------------------------------------------------
@@ -148,20 +164,23 @@ def stacked_plot(df, feature, save_path=None):
             # Create a pivot table from the DataFrame
             # The pivot table will have the specified feature as columns and counts as values
             # The aggregation function used is 'sum' to aggregate counts for each category
+            plt.figure(figsize=(6,4))
+            
             pivot_table = pd.pivot_table(df, values='count',
-                                        columns=[feature], aggfunc="sum").rename_axis(feature).reset_index()
-
+                                        columns=[feature],
+                                        aggfunc="sum").rename_axis(feature).reset_index()
+            
             # Plot a stacked bar chart using the pivot table
             # The x-axis is set to the specified feature
             # The bars will be stacked, so each category contributes to the total
-            ax = pivot_table.plot(x=feature, kind='bar', stacked=True, figsize=(6,4))
+            ax = pivot_table.plot(figsize=(6,4), colormap='viridis', x=feature, kind='bar', stacked=True)
            
             # Customize the x-axis label and make it larger
-            plt.xlabel(feature, fontsize=12)
+            plt.xlabel(feature, fontsize=8)
 
             # Hide the x-axis ticks to make the chart cleaner
             plt.xticks(visible=False)
-
+            
             # Display the count values as percentages on top of the bars
             for p in ax.patches:
                 width, height = p.get_width(), p.get_height()
@@ -173,13 +192,15 @@ def stacked_plot(df, feature, save_path=None):
              # Save the chart if save_path is provided
             if save_path:
                 os.makedirs(save_path, exist_ok=True)  # Create the directory if it doesn't exist
-                combined_hist_plot_save_path = os.path.join(save_path, "stacked_barplot.png")
-                plt.savefig(combined_hist_plot_save_path, bbox_inches='tight', dpi=300)
-                plt.close(fig)
-                print(f"Saved at {save_path}") 
-            # Show the chart
-            else:
+                stacked_barplot_save_path = os.path.join(save_path, "{}_stacked_barplot.png".format(feature))
+                plt.savefig(stacked_barplot_save_path, bbox_inches='tight', dpi=300)
+                
+                # Show the chart
                 plt.show()
+                plt.close()
+                print(f"Saved at {save_path}") 
+            
+               
         else:
             raise ValueError("The specified feature is the last column in the DataFrame.")
     except KeyError:
